@@ -109,12 +109,12 @@ jobs:
 
           # Parse conventional commit format: type(scope): description
           # Check for breaking change indicator (!)
-          if [[ "$COMMIT_MSG" =~ ^[a-z]+(\([^)]*\))?!:[[:space:]] ]] || [[ "$COMMIT_MSG" =~ ^[a-z]+!:[[:space:]] ]]; then
+          if [[ "$COMMIT_MSG" =~ ^[a-z]+!: ]] || [[ "$COMMIT_MSG" =~ ^[a-z]+\([^)]*\)!: ]]; then
             echo "Breaking change detected (!) - incrementing MAJOR version"
             MAJOR=$((MAJOR + 1))
             MINOR=0
             PATCH=0
-          elif [[ "$COMMIT_MSG" =~ ^feat(\([^)]*\))?:[[:space:]] ]] || [[ "$COMMIT_MSG" =~ ^feat:[[:space:]] ]]; then
+          elif [[ "$COMMIT_MSG" =~ ^feat: ]] || [[ "$COMMIT_MSG" =~ ^feat\([^)]*\): ]]; then
             echo "Feature detected - incrementing MINOR version"
             MINOR=$((MINOR + 1))
             PATCH=0
