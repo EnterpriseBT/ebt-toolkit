@@ -1,4 +1,4 @@
-name: Build and Push Docker Image
+name: Build and Deploy Docker Image
 
 on:
   push:
@@ -24,186 +24,17 @@ on:
       - 'refactor/**'
   workflow_dispatch:
 
-env:
-  DOCKER_REGISTRY: bbgrabbag
-  DOCKER_IMAGE_NAME: ebt-cli
-
 jobs:
-  validate-and-build:
-    runs-on: ubuntu-latest
+  build:
     # Only run on push, merged PRs, or manual triggers
     if: |
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'push' ||
       (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # Fetch all history for proper version calculation
-
-      - name: Validate branch name
-        id: validate
-        run: |
-          BRANCH_NAME="${GITHUB_REF#refs/heads/}"
-          # Extract the ticket (middle part of [prefix]/[ticket]/[description])
-          TICKET="$(echo "$BRANCH_NAME" | cut -d'/' -f2)"
-          echo "Extracted ticket: $TICKET"
-          echo "ticket=$TICKET" >> $GITHUB_OUTPUT
-
-          # Allowed patterns:
-          # - main
-          # - staging
-          # - [prefix]/[ticket]/[label] where prefix is: feature, patch, ci, doc, performance, refactor
-
-          if [[ "$BRANCH_NAME" == "main" ]] || [[ "$BRANCH_NAME" == "staging" ]]; then
-            echo "Valid branch: $BRANCH_NAME"
-            echo "branch_type=release" >> $GITHUB_OUTPUT
-            echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
-          elif [[ "$BRANCH_NAME" =~ ^(feature|patch|ci|doc|performance|refactor)/[^/]+/[^/]+$ ]]; then
-            echo "Valid branch: $BRANCH_NAME"
-            echo "branch_type=development" >> $GITHUB_OUTPUT
-            echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
-          else
-            echo "ERROR: Branch name '$BRANCH_NAME' does not follow naming conventions"
-            echo "Allowed formats:"
-            echo "  - 'main'"
-            echo "  - 'staging'"
-            echo "  - '[prefix]/[ticket]/[label]' where prefix is one of: feature, patch, ci, doc, performance, refactor"
-            exit 1
-          fi
-
-      - name: Get latest version tag
-        id: get_version
-        run: |
-          # Get the latest semantic version tag
-          LATEST_TAG=$(git tag -l 'v*.*.*' --sort=-v:refname | head -n 1)
-
-          if [ -z "$LATEST_TAG" ]; then
-            echo "No existing version tags found, starting from v0.0.0"
-            LATEST_TAG="v0.0.0"
-          fi
-
-          echo "Latest tag: $LATEST_TAG"
-          echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
-
-          # Extract version numbers
-          VERSION=${LATEST_TAG#v}
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
-
-          echo "current_major=$MAJOR" >> $GITHUB_OUTPUT
-          echo "current_minor=$MINOR" >> $GITHUB_OUTPUT
-          echo "current_patch=$PATCH" >> $GITHUB_OUTPUT
-
-      - name: Determine new version
-        id: version
-        run: |
-          BRANCH_NAME="${GITHUB_REF#refs/heads/}"
-          BRANCH_TYPE="${{ steps.validate.outputs.branch_type }}"
-          TICKET="${{ steps.validate.outputs.ticket }}"
-
-          MAJOR=${{ steps.get_version.outputs.current_major }}
-          MINOR=${{ steps.get_version.outputs.current_minor }}
-          PATCH=${{ steps.get_version.outputs.current_patch }}
-
-          # Get the most recent commit message
-          COMMIT_MSG=$(git log -1 --pretty=%B)
-          echo "Commit message: $COMMIT_MSG"
-
-          # Parse conventional commit format: type(scope): description
-          # Check for breaking change indicator (!)
-          if [[ "$COMMIT_MSG" == *"!:"* ]]; then
-            echo "Breaking change detected (!) - incrementing MAJOR version"
-            MAJOR=$((MAJOR + 1))
-            MINOR=0
-            PATCH=0
-          elif [[ "$COMMIT_MSG" == "feat:"* ]] || [[ "$COMMIT_MSG" == "feat("*"):"* ]]; then
-            echo "Feature detected - incrementing MINOR version"
-            MINOR=$((MINOR + 1))
-            PATCH=0
-          else
-            echo "Patch/other change - incrementing PATCH version"
-            PATCH=$((PATCH + 1))
-          fi
-
-          NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
-
-          # Determine tags based on branch
-          if [[ "$BRANCH_NAME" == "main" ]]; then
-            # Main branch: stable release (e.g., 2.3.1)
-            DOCKER_TAG="$NEW_VERSION"
-            ADDITIONAL_TAGS="latest"
-          elif [[ "$BRANCH_NAME" == "staging" ]]; then
-            # Staging branch: release candidate (e.g., 2.3.1-rc.1)
-            # Count existing rc tags for this version
-            RC_COUNT=$(git tag -l "v${NEW_VERSION}-rc.*" | wc -l)
-            RC_NUM=$((RC_COUNT + 1))
-            DOCKER_TAG="${NEW_VERSION}-rc.${RC_NUM}"
-            ADDITIONAL_TAGS="staging"
-          else
-            # Development branches: rc without number (e.g., 2.3.1-rc)
-            DOCKER_TAG="${TICKET}-${NEW_VERSION}.dev"
-            ADDITIONAL_TAGS=""
-          fi
-
-          echo "New version: $NEW_VERSION"
-          echo "Docker tag: $DOCKER_TAG"
-          echo "Additional tags: $ADDITIONAL_TAGS"
-
-          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
-          echo "docker_tag=$DOCKER_TAG" >> $GITHUB_OUTPUT
-          echo "additional_tags=$ADDITIONAL_TAGS" >> $GITHUB_OUTPUT
-          echo "git_tag=v$DOCKER_TAG" >> $GITHUB_OUTPUT
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Build and push Docker image
-        id: docker_build
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: |
-            ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.version.outputs.docker_tag }}
-            ${{ steps.version.outputs.additional_tags && format('{0}/{1}:{2}', env.DOCKER_REGISTRY, env.DOCKER_IMAGE_NAME, steps.version.outputs.additional_tags) || '' }}
-          cache-from: type=registry,ref=${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:buildcache
-          cache-to: type=registry,ref=${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:buildcache,mode=max
-
-      - name: Create git tag for release branches
-        if: steps.validate.outputs.branch_type == 'release'
-        run: |
-          GIT_TAG="${{ steps.version.outputs.git_tag }}"
-
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          # Create and push tag
-          git tag -a "$GIT_TAG" -m "Release $GIT_TAG"
-          git push origin "$GIT_TAG"
-
-          echo "Created and pushed git tag: $GIT_TAG"
-
-      - name: Output summary
-        run: |
-          echo "## Docker Build Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- **Branch:** ${{ steps.validate.outputs.branch_name }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Branch Type:** ${{ steps.validate.outputs.branch_type }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Version:** ${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Docker Tag:** ${{ steps.version.outputs.docker_tag }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Image:** ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.version.outputs.docker_tag }}" >> $GITHUB_STEP_SUMMARY
-
-          if [ -n "${{ steps.version.outputs.additional_tags }}" ]; then
-            echo "- **Additional Tags:** ${{ steps.version.outputs.additional_tags }}" >> $GITHUB_STEP_SUMMARY
-          fi
-
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Image pushed successfully! :rocket:" >> $GITHUB_STEP_SUMMARY
+    uses: EnterpriseBT/ebt-docker-build-workflow@main
+    with:
+      registry: bbgrabbag
+      image_name: ebt-cli
+    secrets:
+      docker_username: ${{ secrets.DOCKER_USERNAME }}
+      docker_password: ${{ secrets.DOCKER_PASSWORD }}

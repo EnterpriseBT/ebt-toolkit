@@ -1,0 +1,47 @@
+name: 'Output Build Summary'
+description: 'Outputs a formatted summary of the build to GitHub Step Summary'
+
+inputs:
+  branch_name:
+    description: 'Branch name'
+    required: true
+  branch_type:
+    description: 'Type of branch (release or development)'
+    required: true
+  version:
+    description: 'Semantic version'
+    required: true
+  docker_tag:
+    description: 'Docker tag used'
+    required: true
+  registry:
+    description: 'Docker registry/organization'
+    required: true
+  image_name:
+    description: 'Docker image name'
+    required: true
+  additional_tags:
+    description: 'Additional tags applied'
+    required: false
+    default: ''
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Generate summary
+      shell: bash
+      run: |
+        echo "## Docker Build Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "- **Branch:** ${{ inputs.branch_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Branch Type:** ${{ inputs.branch_type }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Version:** ${{ inputs.version }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Docker Tag:** ${{ inputs.docker_tag }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Image:** ${{ inputs.registry }}/${{ inputs.image_name }}:${{ inputs.docker_tag }}" >> $GITHUB_STEP_SUMMARY
+
+        if [ -n "${{ inputs.additional_tags }}" ]; then
+          echo "- **Additional Tags:** ${{ inputs.additional_tags }}" >> $GITHUB_STEP_SUMMARY
+        fi
+
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "Image pushed successfully! :rocket:" >> $GITHUB_STEP_SUMMARY

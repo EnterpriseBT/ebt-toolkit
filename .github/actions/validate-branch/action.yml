@@ -1,0 +1,48 @@
+name: 'Validate Branch Name'
+description: 'Validates branch name follows naming conventions and extracts metadata'
+
+outputs:
+  ticket:
+    description: 'Extracted ticket from branch name'
+    value: ${{ steps.validate.outputs.ticket }}
+  branch_type:
+    description: 'Type of branch (release or development)'
+    value: ${{ steps.validate.outputs.branch_type }}
+  branch_name:
+    description: 'Full branch name'
+    value: ${{ steps.validate.outputs.branch_name }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Validate branch name
+      id: validate
+      shell: bash
+      run: |
+        BRANCH_NAME="${GITHUB_REF#refs/heads/}"
+        # Extract the ticket (middle part of [prefix]/[ticket]/[description])
+        TICKET="$(echo "$BRANCH_NAME" | cut -d'/' -f2)"
+        echo "Extracted ticket: $TICKET"
+        echo "ticket=$TICKET" >> $GITHUB_OUTPUT
+
+        # Allowed patterns:
+        # - main
+        # - staging
+        # - [prefix]/[ticket]/[label] where prefix is: feature, patch, ci, doc, performance, refactor
+
+        if [[ "$BRANCH_NAME" == "main" ]] || [[ "$BRANCH_NAME" == "staging" ]]; then
+          echo "Valid branch: $BRANCH_NAME"
+          echo "branch_type=release" >> $GITHUB_OUTPUT
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+        elif [[ "$BRANCH_NAME" =~ ^(feature|patch|ci|doc|performance|refactor)/[^/]+/[^/]+$ ]]; then
+          echo "Valid branch: $BRANCH_NAME"
+          echo "branch_type=development" >> $GITHUB_OUTPUT
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+        else
+          echo "ERROR: Branch name '$BRANCH_NAME' does not follow naming conventions"
+          echo "Allowed formats:"
+          echo "  - 'main'"
+          echo "  - 'staging'"
+          echo "  - '[prefix]/[ticket]/[label]' where prefix is one of: feature, patch, ci, doc, performance, refactor"
+          exit 1
+        fi
