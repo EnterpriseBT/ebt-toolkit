@@ -109,12 +109,12 @@ jobs:
 
           # Parse conventional commit format: type(scope): description
           # Check for breaking change indicator (!)
-          if [[ "$COMMIT_MSG" =~ ^[a-z]+(\([^)]*\))?!: ]]; then
+          if [[ "$COMMIT_MSG" =~ ^[a-z]+(\([^)]*\))?!:[[:space:]] ]] || [[ "$COMMIT_MSG" =~ ^[a-z]+!:[[:space:]] ]]; then
             echo "Breaking change detected (!) - incrementing MAJOR version"
             MAJOR=$((MAJOR + 1))
             MINOR=0
             PATCH=0
-          elif [[ "$COMMIT_MSG" =~ ^feat(\([^)]*\))?: ]]; then
+          elif [[ "$COMMIT_MSG" =~ ^feat(\([^)]*\))?:[[:space:]] ]] || [[ "$COMMIT_MSG" =~ ^feat:[[:space:]] ]]; then
             echo "Feature detected - incrementing MINOR version"
             MINOR=$((MINOR + 1))
             PATCH=0
@@ -139,7 +139,7 @@ jobs:
             ADDITIONAL_TAGS="staging"
           else
             # Development branches: rc without number (e.g., 2.3.1-rc)
-            DOCKER_TAG="${NEW_VERSION}-rc"
+            DOCKER_TAG="${BRANCH_NAME}-${NEW_VERSION}.dev"
             ADDITIONAL_TAGS=""
           fi
 
