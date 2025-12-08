@@ -47,7 +47,10 @@ jobs:
         id: validate
         run: |
           BRANCH_NAME="${GITHUB_REF#refs/heads/}"
-          echo "Branch name: $BRANCH_NAME"
+          # Extract the ticket (middle part of [prefix]/[ticket]/[description])
+          TICKET="$(echo "$BRANCH_NAME" | cut -d'/' -f2)"
+          echo "Extracted ticket: $TICKET"
+          echo "ticket=$TICKET" >> $GITHUB_OUTPUT
 
           # Allowed patterns:
           # - main
@@ -98,6 +101,7 @@ jobs:
         run: |
           BRANCH_NAME="${GITHUB_REF#refs/heads/}"
           BRANCH_TYPE="${{ steps.validate.outputs.branch_type }}"
+          TICKET="${{ steps.validate.outputs.ticket }}"
 
           MAJOR=${{ steps.get_version.outputs.current_major }}
           MINOR=${{ steps.get_version.outputs.current_minor }}
@@ -139,7 +143,7 @@ jobs:
             ADDITIONAL_TAGS="staging"
           else
             # Development branches: rc without number (e.g., 2.3.1-rc)
-            DOCKER_TAG="${BRANCH_NAME}-${NEW_VERSION}.dev"
+            DOCKER_TAG="${TICKET}-${NEW_VERSION}.dev"
             ADDITIONAL_TAGS=""
           fi
 
