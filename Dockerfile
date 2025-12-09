@@ -14,10 +14,8 @@ WORKDIR /workspace
 
 # Copy CLI scripts and config
 COPY scripts/ /usr/local/bin/ebt-cli-scripts/
-COPY config.sh /tmp/config.sh
+COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 
-# Run configuration script
-RUN chmod +x /tmp/config.sh && \
-    /tmp/config.sh && \
-    rm /tmp/config.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
