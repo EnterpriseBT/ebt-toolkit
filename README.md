@@ -7,7 +7,7 @@ A dockerized CLI tool for enforcing git branching and commit formatting standard
 ### Pull the Docker Image
 
 ```bash
-docker pull <your-registry>/ebt-cli:latest
+docker pull bbgrabbag/ebt-cli:latest
 ```
 
 ### Run the CLI
@@ -15,7 +15,7 @@ docker pull <your-registry>/ebt-cli:latest
 Run the CLI in your git repository:
 
 ```bash
-docker run -it --rm -v $(pwd):/workspace <your-registry>/ebt-cli:latest
+docker run -it --rm -v $(pwd):/workspace bbgrabbag/ebt-cli:latest
 ```
 
 Once inside the container, use the `ebt` command:
