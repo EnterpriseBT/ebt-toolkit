@@ -1,10 +1,17 @@
 {
-    "name": "Bash Environment",
+    "name": "EBT CLI",
     "dockerComposeFile": "../docker-compose.yml",
     "service": "app",
     "workspaceFolder": "/workspace",
     "features": {},
-    "customizations": {},
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "Anthropic.claude-code",
+                "redhat.vscode-yaml"
+            ]
+        }
+    },
     "remoteUser": "root",
     "remoteEnv": {
         "SHELL": "/bin/bash"
