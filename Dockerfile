@@ -12,31 +12,10 @@ SHELL ["/bin/bash", "-c"]
 # Set working directory
 WORKDIR /workspace
 
-# Copy CLI scripts
+# Copy CLI scripts and config
 COPY scripts/ /usr/local/bin/ebt-cli-scripts/
+COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 
-# Make scripts executable
-RUN chmod +x /usr/local/bin/ebt-cli-scripts/*.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# Source git prompt configuration
-RUN echo 'if [ -f /usr/local/bin/ebt-cli-scripts/git-prompt.sh ]; then' >> /root/.bashrc && \
-    echo '  source /usr/local/bin/ebt-cli-scripts/git-prompt.sh' >> /root/.bashrc && \
-    echo 'fi' >> /root/.bashrc
-
-# Create symlink to make ebt-cli available in PATH
-RUN ln -s /usr/local/bin/ebt-cli-scripts/ebt.sh /usr/local/bin/ebt
-
-# Enable bash completion system-wide
-RUN echo 'if ! shopt -oq posix; then' >> /etc/bash.bashrc && \
-    echo '  if [ -f /usr/share/bash-completion/bash_completion ]; then' >> /etc/bash.bashrc && \
-    echo '    . /usr/share/bash-completion/bash_completion' >> /etc/bash.bashrc && \
-    echo '  elif [ -f /etc/bash_completion ]; then' >> /etc/bash.bashrc && \
-    echo '    . /etc/bash_completion' >> /etc/bash.bashrc && \
-    echo '  fi' >> /etc/bash.bashrc && \
-    echo 'fi' >> /etc/bash.bashrc
-
-# Also enable for root user's .bashrc
-RUN echo 'if [ -f /usr/share/bash-completion/bash_completion ]; then' >> /root/.bashrc && \
-    echo '  . /usr/share/bash-completion/bash_completion' >> /root/.bashrc && \
-    echo 'fi' >> /root/.bashrc
-
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
