@@ -12,10 +12,10 @@ SHELL ["/bin/bash", "-c"]
 # Set working directory
 WORKDIR /workspace
 
-# Copy CLI scripts and config
-COPY scripts/ /usr/local/bin/ebt-cli-scripts/
-COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
+# Copy CLI scripts and configuration files
+COPY scripts/ /usr/local/bin/ebt-cli/scripts/
+COPY install.sh /usr/local/bin/ebt-cli/install.sh
+COPY lib/ /usr/local/bin/ebt-cli/lib/
 
-RUN chmod +x /usr/local/bin/entrypoint.sh
-
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+RUN chmod +x /usr/local/bin/ebt-cli/install.sh
+RUN /usr/local/bin/ebt-cli/install.sh

@@ -1,14 +1,10 @@
-version: '3.8'
-
 services:
-  app:
+  dev:
     build:
       context: .
       dockerfile: Dockerfile
     volumes:
       - .:/workspace
     working_dir: /workspace
-    stdin_open: true
-    tty: true
-    command: /bin/bash
-
+    user: root
+    command: [ 'sleep', 'infinity' ]
