@@ -19,4 +19,3 @@ COPY lib/ /usr/local/bin/ebt-cli/lib/
 
 RUN chmod +x /usr/local/bin/ebt-cli/install.sh
 RUN /usr/local/bin/ebt-cli/install.sh
-
