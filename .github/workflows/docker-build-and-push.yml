@@ -33,7 +33,7 @@ jobs:
     uses: EnterpriseBT/ebt-docker-build-workflow/.github/workflows/docker_build_push.yml@main
     with:
       registry: bbgrabbag
-      image_name: ebt-cli
+      image_name: ebt-toolkit
     secrets:
       docker_username: ${{ secrets.DOCKER_USERNAME }}
       docker_password: ${{ secrets.DOCKER_PASSWORD }}

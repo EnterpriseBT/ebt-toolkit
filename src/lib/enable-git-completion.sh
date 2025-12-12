@@ -2,8 +2,8 @@
 
 # Source git prompt configuration
 cat >> /root/.bashrc << 'EOF'
-if [ -f /usr/local/bin/ebt-cli/lib/git-prompt.sh ]; then
-  source /usr/local/bin/ebt-cli/lib/git-prompt.sh
+if [ -f /usr/local/bin/ebt-toolkit/lib/git-prompt.sh ]; then
+  source /usr/local/bin/ebt-toolkit/lib/git-prompt.sh
 fi
 EOF
 

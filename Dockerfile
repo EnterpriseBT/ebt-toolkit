@@ -38,10 +38,10 @@ RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg -o 
     rm -rf /var/lib/apt/lists/*
 
 # Copy source code
-COPY src/ /usr/local/bin/ebt-cli/
+COPY src/ /usr/local/bin/ebt-toolkit/
 
-# Install EBT CLI
-RUN chmod +x /usr/local/bin/ebt-cli/install.sh
-RUN /usr/local/bin/ebt-cli/install.sh
+# Install EBT toolkit
+RUN chmod +x /usr/local/bin/ebt-toolkit/install.sh
+RUN /usr/local/bin/ebt-toolkit/install.sh
 
 CMD ["sleep", "infinity"]

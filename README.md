@@ -1,6 +1,6 @@
-# Enterprise CLI
+# Enterprise Toolkit
 
-A dockerized CLI tool for enforcing git branching and commit formatting standards across your organization.
+A dockerized CLI tool for enforcing git branching and commit formatting standards across your organization. Comes installed with AWS and Github CLI
 
 ## Quick Start
 
@@ -26,7 +26,7 @@ ebt <command>
 
 ## Available Commands
 
-- `ebt create-branch` - Interactively create a new git branch with enforced naming conventions
+- `ebt branch` - Interactively create a new git branch with enforced naming conventions
 - `ebt commit` - Interactively create a git commit with enforced formatting standards
 - `ebt help` - Display help information
 
@@ -34,7 +34,7 @@ ebt <command>
 
 ```bash
 # Create a new branch
-ebt create-branch
+ebt branch
 
 # Make your changes, then commit
 ebt commit
