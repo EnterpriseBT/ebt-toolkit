@@ -10,6 +10,3 @@ ln -s /usr/local/bin/ebt-cli/scripts/ebt.sh /usr/local/bin/ebt
 
 # Enable git completion
 /usr/local/bin/ebt-cli/lib/enable-git-completion.sh
-
-# Install vendor tools
-/usr/local/bin/ebt-cli/lib/install-vendors.sh
