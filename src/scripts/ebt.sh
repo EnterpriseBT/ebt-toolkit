@@ -18,21 +18,21 @@ NC='\033[0m' # No Color
 
 # Display help message
 show_help() {
-    echo "ebt-cli - Enterprise BT CLI Tool"
+    echo "ebt-toolit - Enterprise BT CLI Tool"
     echo ""
-    echo "Usage: ebt-cli <command>"
+    echo "Usage: ebt <command>"
     echo ""
     echo "Available commands:"
-    echo "  create-branch    Create a new git branch interactively"
-    echo "  commit           Create a git commit interactively"
-    echo "  help             Show help message"
+    echo "  branch                Create a new git branch interactively"
+    echo "  commit                Create a git commit interactively"
+    echo "  help | --help | -h    Show help message"
     echo ""
 }
 
 # Main command dispatcher
 case "$1" in
-    create-branch)
-        bash "$SCRIPT_DIR/create-branch.sh"
+    branch)
+        bash "$SCRIPT_DIR/branch.sh"
         ;;
     commit)
         bash "$SCRIPT_DIR/commit.sh"
