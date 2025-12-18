@@ -1,0 +1,39 @@
+name: <name>
+
+on:
+  push:
+    branches:
+      - main
+      - staging
+      - "feature/**"
+      - "patch/**"
+      - "ci/**"
+      - "doc/**"
+      - "performance/**"
+      - "refactor/**"
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+      - staging
+      - "feature/**"
+      - "patch/**"
+      - "ci/**"
+      - "doc/**"
+      - "performance/**"
+      - "refactor/**"
+  workflow_dispatch:
+jobs:
+  build:
+    # Only run on push, merged PRs, or manual triggers
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'push' ||
+      (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
+    uses: EnterpriseBT/ebt-docker-build-workflow/.github/workflows/docker_build_push.yml@main
+    with:
+      registry: <registry>
+      image_name: <image_name>
+    secrets:
+      docker_username: ${{ secrets.DOCKER_USERNAME }}
+      docker_password: ${{ secrets.DOCKER_PASSWORD }}

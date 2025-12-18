@@ -7,7 +7,7 @@ A dockerized CLI tool for enforcing git branching and commit formatting standard
 ### Pull the Docker Image
 
 ```bash
-docker pull bbgrabbag/ebt-cli:latest
+docker pull bbgrabbag/ebt-toolkit:latest
 ```
 
 ### Run the CLI
@@ -15,7 +15,7 @@ docker pull bbgrabbag/ebt-cli:latest
 Run the CLI in your git repository:
 
 ```bash
-docker run -it --rm -v $(pwd):/workspace bbgrabbag/ebt-cli:latest
+docker run -it --rm -v $(pwd):/workspace bbgrabbag/ebt-toolkit:latest
 ```
 
 Once inside the container, use the `ebt` command:
@@ -28,6 +28,7 @@ ebt <command>
 
 - `ebt branch` - Interactively create a new git branch with enforced naming conventions
 - `ebt commit` - Interactively create a git commit with enforced formatting standards
+- `ebt workflow` - Generate a Github Actions workflow template for deploying docker images
 - `ebt help` - Display help information
 
 ## Example Usage
