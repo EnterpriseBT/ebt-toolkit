@@ -43,7 +43,14 @@ jobs:
         id: validate
         uses: ./.github/actions/validate-branch
 
-      - name: Docker meta
+      - name: Calculate version
+        id: version
+        uses: ./.github/actions/calculate-version
+        with:
+          branch_type: ${{ steps.validate.outputs.branch_type }}
+          ticket: ${{ steps.validate.outputs.ticket }}
+
+      - name: Docker metadata
         id: meta
         if: success()
         uses: docker/metadata-action@v5
@@ -51,10 +58,8 @@ jobs:
           images: |
             ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}
           tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
+            ${{ steps.version.outputs.tag }}
+            ${{ steps.version.outputs.additional_tags }}
 
       - name: Login to DockerHub
         if: success()
@@ -72,24 +77,26 @@ jobs:
           context: .
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-
-      # - name: Create git tag for release branches
-      #   if: success() && steps.validate.outputs.branch_type == 'release'
-      #   uses: EnterpriseBT/ebt-docker-build-workflow/.github/actions/create-git-tag@main
-      #   with:
-      #     git_tag: ${{ steps.version.outputs.git_tag }}
-
-      # - name: Create GitHub release
-      #   id: github_release
-      #   if: success() && steps.validate.outputs.branch_type == 'release'
-      #   uses: EnterpriseBT/ebt-docker-build-workflow/.github/actions/create-github-release@main
-      #   with:
-      #     git_tag: ${{ steps.version.outputs.git_tag }}
-      #     registry: ${{ inputs.registry }}
-      #     image_name: ${{ inputs.image_name }}
-      #     docker_tag: ${{ steps.version.outputs.docker_tag }}
-      #     additional_tags: ${{ steps.version.outputs.additional_tags }}
-      #     github_token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Create Git tag
+        id: git_tag
+        if: success()
+        uses: ./.github/actions/create-git-tag
+        with:
+          tag: ${{ steps.version.outputs.tag }}
+          message: ${{ steps.version.outputs.message }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+        
+      - name: Create GitHub release
+        id: github_release
+        if: success()
+        uses: ./.github/actions/create-github-release
+        with:
+          tag: ${{ steps.version.outputs.tag }}
+          additional_tags: ${{ steps.version.outputs.additional_tags }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          registry: ${{ env.DOCKER_REGISTRY }}
+          image_name: ${{ env.DOCKER_IMAGE_NAME }}
 
       - name: Output summary
         id: output_summary
@@ -98,10 +105,6 @@ jobs:
         with:
           branch_name: ${{ steps.validate.outputs.branch_name }}
           branch_type: ${{ steps.validate.outputs.branch_type }}
-          # version: ${{ steps.version.outputs.version }}
           image_id: ${{ steps.build_push.outputs.imageid }}
           metadata: ${{ steps.build_push.outputs.metadata }}
-          # registry: ${{ inputs.registry }}
-          # image_name: ${{ inputs.image_name }}
-          # additional_tags: ${{ steps.version.outputs.additional_tags }}
-          # release_url: ${{ steps.github_release.outputs.release_url }}
+          release_url: ${{ steps.github_release.outputs.url }}

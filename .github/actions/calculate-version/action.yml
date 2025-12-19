@@ -87,26 +87,25 @@ runs:
         # Determine tags based on branch
         if [[ "$BRANCH_NAME" == "main" ]]; then
           # Main branch: stable release (e.g., 2.3.1)
-          DOCKER_TAG="$NEW_VERSION"
+          TAG="v$NEW_VERSION"
           ADDITIONAL_TAGS="latest"
         elif [[ "$BRANCH_NAME" == "staging" ]]; then
           # Staging branch: release candidate (e.g., 2.3.1-rc.1)
           # Count existing rc tags for this version
-          RC_COUNT=$(git tag -l "v${NEW_VERSION}-rc.*" | wc -l)
+          RC_COUNT=$(git tag -l "${NEW_VERSION}-rc.*" | wc -l)
           RC_NUM=$((RC_COUNT + 1))
-          DOCKER_TAG="${NEW_VERSION}-rc.${RC_NUM}"
+          TAG="v${NEW_VERSION}-rc.${RC_NUM}"
           ADDITIONAL_TAGS="staging"
         else
-          # Development branches: rc without number (e.g., 2.3.1-rc)
-          DOCKER_TAG="${TICKET}-${NEW_VERSION}.dev"
+          # Development branches: rc without number (e.g., 2.3.1-dev)
+          TAG="${TICKET}-v${NEW_VERSION}-dev"
           ADDITIONAL_TAGS=""
         fi
 
         echo "New version: $NEW_VERSION"
-        echo "Docker tag: $DOCKER_TAG"
+        echo "Tag: $TAG"
         echo "Additional tags: $ADDITIONAL_TAGS"
 
         echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
-        echo "docker_tag=$DOCKER_TAG" >> $GITHUB_OUTPUT
+        echo "tag=$TAG" >> $GITHUB_OUTPUT
         echo "additional_tags=$ADDITIONAL_TAGS" >> $GITHUB_OUTPUT
-        echo "git_tag=v$DOCKER_TAG" >> $GITHUB_OUTPUT

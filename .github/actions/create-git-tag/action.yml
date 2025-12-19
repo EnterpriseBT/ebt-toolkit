@@ -2,8 +2,8 @@ name: 'Create Git Tag'
 description: 'Creates and pushes a git tag'
 
 inputs:
-  git_tag:
-    description: 'Git tag to create (e.g., v2.3.1)'
+  tag:
+    description: 'Git tag label to create (e.g., v2.3.1)'
     required: true
   message:
     description: 'Tag message'
