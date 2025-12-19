@@ -1,4 +1,4 @@
-name: Build and Deploy Docker Image
+name: Create Tag and Release
 
 on:
   push:
@@ -61,3 +61,13 @@ jobs:
         uses: ./.github/actions/create-github-release
         with:
           tag: ${{ steps.version.outputs.tag }}
+      
+      - name: Output summary
+        id: output_summary
+        if: success()
+        run: |
+          echo "## Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch:** \`${{ steps.validate.outputs.branch_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch Type:** \`${{ steps.validate.outputs.branch_type }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tag:** \`${{ steps.git_tag.outputs.tag }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Release URL:** \`${{ steps.github_release.outputs.url }}\`" >> $GITHUB_STEP_SUMMARY
