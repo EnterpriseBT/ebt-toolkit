@@ -80,7 +80,7 @@ jobs:
       
       - name: Create Git tag
         id: git_tag
-        if: success()
+        if: success() && steps.validate.outputs.branch_type == 'release'
         uses: ./.github/actions/create-git-tag
         with:
           tag: ${{ steps.version.outputs.tag }}
@@ -89,7 +89,7 @@ jobs:
         
       - name: Create GitHub release
         id: github_release
-        if: success()
+        if: success() && steps.validate.outputs.branch_type == 'release'
         uses: ./.github/actions/create-github-release
         with:
           tag: ${{ steps.version.outputs.tag }}

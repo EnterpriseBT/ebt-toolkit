@@ -16,7 +16,7 @@ runs:
     - name: Create and push git tag
       shell: bash
       run: |
-        GIT_TAG="${{ inputs.git_tag }}"
+        GIT_TAG="${{ inputs.tag }}"
         MESSAGE="${{ inputs.message }}"
 
         if [ -z "$MESSAGE" ]; then
