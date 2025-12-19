@@ -36,18 +36,6 @@ runs:
         echo "- **Branch:** ${{ inputs.branch_name }}" >> $GITHUB_STEP_SUMMARY
         echo "- **Branch Type:** ${{ inputs.branch_type }}" >> $GITHUB_STEP_SUMMARY
         echo "- **Docker Image:** ${{ inputs.image_id }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Metadata:** ${{ inputs.metadata }}" >> $GITHUB_STEP_SUMMARY
-
-        if [ -n "${{ inputs.additional_tags }}" ]; then
-          echo "- **Additional Tags:** ${{ inputs.additional_tags }}" >> $GITHUB_STEP_SUMMARY
-        fi
-
-        if [ -n "${{ inputs.release_url }}" ]; then
-          echo "- **GitHub Release:** ${{ inputs.release_url }}" >> $GITHUB_STEP_SUMMARY
-        fi
-
+        echo "- **Metadata:** \`\`\`${{ inputs.metadata }}\`\`\`" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "Image pushed successfully! :rocket:" >> $GITHUB_STEP_SUMMARY
-
-        echo "image=${{ inputs.image_id }}" >> $GITHUB_OUTPUT
-        echo "metadata=${{ inputs.metadata }}" >> $GITHUB_OUTPUT
