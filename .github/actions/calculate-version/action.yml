@@ -29,14 +29,14 @@ runs:
       shell: bash
       run: |
         # Get the latest semantic version tag based on branch type and environment
-        if [[ "$BRANCH_TYPE" == "release" ]]; then
+        if [[ "${{ inputs.branch_type }}" == "release" ]]; then
           LATEST_TAG=$(git tag -l 'release-v*.*.*' --sort=-v:refname | head -n 1)
-        elif [[ "$BRANCH_TYPE" == "candidate" ]]; then
+        elif [[ "${{ inputs.branch_type }}" == "candidate" ]]; then
           LATEST_TAG=$(git tag -l 'rc-v*.*.*' --sort=-v:refname | head -n 1)
-        elif [[ "$BRANCH_TYPE" == "development" ]]; then
-          LATEST_TAG=$(git tag -l "${TICKET}-v*.*.*" --sort=-v:refname | head -n 1)
+        elif [[ "${{ inputs.branch_type }}" == "development" ]]; then
+          LATEST_TAG=$(git tag -l "${{ inputs.ticket }}-v*.*.*" --sort=-v:refname | head -n 1)
         else
-          echo "Invalid branch type: $BRANCH_TYPE"
+          echo "Invalid branch type: ${{ inputs.branch_type }}"
           exit 0
         fi
 
