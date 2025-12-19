@@ -8,22 +8,18 @@ inputs:
   branch_type:
     description: "Type of branch (release or development)"
     required: true
-  version:
-    description: "Semantic version"
-    required: true
   docker_tag:
     description: "Docker tag used"
     required: true
   registry:
     description: "Docker registry/organization"
     required: true
-  image_name:
-    description: "Docker image name"
+  image:
+    description: "Docker image"
     required: true
-  additional_tags:
-    description: "Additional tags applied"
-    required: false
-    default: ""
+  metadata:
+    description: "Docker image metadata"
+    required: true
   release_url:
     description: "GitHub release URL (for release branches)"
     required: false
@@ -35,11 +31,10 @@ runs:
     - name: Generate summary
       shell: bash
       run: |
-        echo "## Docker Build Summary" >> $GITHUB_STEP_SUMMARY
+        echo "## Job Summary" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "- **Branch:** ${{ inputs.branch_name }}" >> $GITHUB_STEP_SUMMARY
         echo "- **Branch Type:** ${{ inputs.branch_type }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Version:** ${{ inputs.version }}" >> $GITHUB_STEP_SUMMARY
         echo "- **Docker Image:** ${{ inputs.image }}" >> $GITHUB_STEP_SUMMARY
         echo "- **Metadata:** ${{ inputs.metadata }}" >> $GITHUB_STEP_SUMMARY
 
