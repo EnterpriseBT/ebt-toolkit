@@ -1,0 +1,69 @@
+name: "Create GitHub Release"
+description: "Creates a GitHub release from a git tag"
+
+inputs:
+  git_tag:
+    description: "Git tag for the release (e.g., v2.3.1)"
+    required: true
+  registry:
+    description: "Docker registry/organization"
+    required: true
+  image_name:
+    description: "Docker image name"
+    required: true
+  docker_tag:
+    description: "Docker tag used"
+    required: true
+  additional_tags:
+    description: "Additional tags applied"
+    required: false
+    default: ""
+  github_token:
+    description: "GitHub token for creating releases"
+    required: true
+
+outputs:
+  release_url:
+    description: "URL of the created release"
+    value: ${{ steps.create_release.outputs.url }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Create GitHub Release
+      id: create_release
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github_token }}
+      run: |
+        GIT_TAG="${{ inputs.git_tag }}"
+        REGISTRY="${{ inputs.registry }}"
+        IMAGE_NAME="${{ inputs.image_name }}"
+        DOCKER_TAG="${{ inputs.docker_tag }}"
+        ADDITIONAL_TAGS="${{ inputs.additional_tags }}"
+
+        # Build release notes
+        RELEASE_NOTES="## Docker Image
+
+        **Image:** \`${REGISTRY}/${IMAGE_NAME}:${DOCKER_TAG}\`
+
+        ### Pull Command
+        \`\`\`bash
+        docker pull ${REGISTRY}/${IMAGE_NAME}:${DOCKER_TAG}
+        \`\`\`
+        "
+                if [ -n "$ADDITIONAL_TAGS" ]; then
+                  RELEASE_NOTES="${RELEASE_NOTES}
+
+        ### Additional Tags
+        ${ADDITIONAL_TAGS}
+        "
+        fi
+
+        # Create release using GitHub CLI
+        RELEASE_URL=$(gh release create "$GIT_TAG" \
+          --title "Release $GIT_TAG" \
+          --notes "$RELEASE_NOTES")
+
+        echo "url=$RELEASE_URL" >> $GITHUB_OUTPUT
+        echo "Created GitHub release: $RELEASE_URL"

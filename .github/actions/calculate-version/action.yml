@@ -1,0 +1,112 @@
+name: 'Calculate Version'
+description: 'Calculates new version based on git tags and conventional commits'
+
+inputs:
+  branch_type:
+    description: 'Type of branch (release or development)'
+    required: true
+  ticket:
+    description: 'Ticket identifier from branch name'
+    required: false
+    default: ''
+
+outputs:
+  version:
+    description: 'New semantic version (e.g., 2.3.1)'
+    value: ${{ steps.version.outputs.version }}
+  docker_tag:
+    description: 'Docker tag to use (e.g., 2.3.1, 2.3.1-rc.1, ticket-2.3.1.dev)'
+    value: ${{ steps.version.outputs.docker_tag }}
+  additional_tags:
+    description: 'Additional tags to apply (e.g., latest, staging)'
+    value: ${{ steps.version.outputs.additional_tags }}
+  git_tag:
+    description: 'Git tag to create (e.g., v2.3.1)'
+    value: ${{ steps.version.outputs.git_tag }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Get latest version tag
+      id: get_version
+      shell: bash
+      run: |
+        # Get the latest semantic version tag
+        LATEST_TAG=$(git tag -l 'v*.*.*' --sort=-v:refname | head -n 1)
+
+        if [ -z "$LATEST_TAG" ]; then
+          echo "No existing version tags found, starting from v0.0.0"
+          LATEST_TAG="v0.0.0"
+        fi
+
+        echo "Latest tag: $LATEST_TAG"
+        echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+
+        # Extract version numbers
+        VERSION=${LATEST_TAG#v}
+        IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+
+        echo "current_major=$MAJOR" >> $GITHUB_OUTPUT
+        echo "current_minor=$MINOR" >> $GITHUB_OUTPUT
+        echo "current_patch=$PATCH" >> $GITHUB_OUTPUT
+
+    - name: Determine new version
+      id: version
+      shell: bash
+      run: |
+        BRANCH_NAME="${GITHUB_REF#refs/heads/}"
+        BRANCH_TYPE="${{ inputs.branch_type }}"
+        TICKET="${{ inputs.ticket }}"
+
+        MAJOR=${{ steps.get_version.outputs.current_major }}
+        MINOR=${{ steps.get_version.outputs.current_minor }}
+        PATCH=${{ steps.get_version.outputs.current_patch }}
+
+        # Get the most recent commit message
+        COMMIT_MSG=$(git log -1 --pretty=%B)
+        echo "Commit message: $COMMIT_MSG"
+
+        # Parse conventional commit format: type(scope): description
+        # Check for breaking change indicator (!)
+        if [[ "$COMMIT_MSG" == *"!:"* ]]; then
+          echo "Breaking change detected (!) - incrementing MAJOR version"
+          MAJOR=$((MAJOR + 1))
+          MINOR=0
+          PATCH=0
+        elif [[ "$COMMIT_MSG" == "feat:"* ]] || [[ "$COMMIT_MSG" == "feat("*"):"* ]]; then
+          echo "Feature detected - incrementing MINOR version"
+          MINOR=$((MINOR + 1))
+          PATCH=0
+        else
+          echo "Patch/other change - incrementing PATCH version"
+          PATCH=$((PATCH + 1))
+        fi
+
+        NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+
+        # Determine tags based on branch
+        if [[ "$BRANCH_NAME" == "main" ]]; then
+          # Main branch: stable release (e.g., 2.3.1)
+          DOCKER_TAG="$NEW_VERSION"
+          ADDITIONAL_TAGS="latest"
+        elif [[ "$BRANCH_NAME" == "staging" ]]; then
+          # Staging branch: release candidate (e.g., 2.3.1-rc.1)
+          # Count existing rc tags for this version
+          RC_COUNT=$(git tag -l "v${NEW_VERSION}-rc.*" | wc -l)
+          RC_NUM=$((RC_COUNT + 1))
+          DOCKER_TAG="${NEW_VERSION}-rc.${RC_NUM}"
+          ADDITIONAL_TAGS="staging"
+        else
+          # Development branches: rc without number (e.g., 2.3.1-rc)
+          DOCKER_TAG="${TICKET}-${NEW_VERSION}.dev"
+          ADDITIONAL_TAGS=""
+        fi
+
+        echo "New version: $NEW_VERSION"
+        echo "Docker tag: $DOCKER_TAG"
+        echo "Additional tags: $ADDITIONAL_TAGS"
+
+        echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+        echo "docker_tag=$DOCKER_TAG" >> $GITHUB_OUTPUT
+        echo "additional_tags=$ADDITIONAL_TAGS" >> $GITHUB_OUTPUT
+        echo "git_tag=v$DOCKER_TAG" >> $GITHUB_OUTPUT
