@@ -35,9 +35,7 @@ runs:
           echo "No existing version tags found, starting from v0.0.0"
           LATEST_TAG="v0.0.0"
         fi
-
         echo "Latest tag: $LATEST_TAG"
-        echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
 
         # Extract version numbers
         VERSION=${LATEST_TAG#v}
@@ -83,19 +81,16 @@ runs:
 
         # Determine tags based on branch
         if [[ "$BRANCH_NAME" == "main" ]]; then
-          # Main branch: stable release (e.g., 2.3.1)
-          TAG="v$NEW_VERSION"
+          # Main branch: stable release (e.g., release-v2.3.1)
+          TAG="release-v${NEW_VERSION}"
           ADDITIONAL_TAGS="latest"
         elif [[ "$BRANCH_NAME" == "staging" ]]; then
-          # Staging branch: release candidate (e.g., 2.3.1-rc.1)
-          # Count existing rc tags for this version
-          RC_COUNT=$(git tag -l "${NEW_VERSION}-rc.*" | wc -l)
-          RC_NUM=$((RC_COUNT + 1))
-          TAG="v${NEW_VERSION}-rc.${RC_NUM}"
+          # Staging branch: release candidate (e.g., rc-v2.3.1)
+          TAG="rc-v${NEW_VERSION}"
           ADDITIONAL_TAGS="staging"
         else
-          # Development branches: rc without number (e.g., 2.3.1-dev)
-          TAG="${TICKET}-v${NEW_VERSION}-dev"
+          # Development branches: prefix ticket to tag (e.g., PROJ-123-v2.3.1)
+          TAG="${TICKET}-v${NEW_VERSION}"
           ADDITIONAL_TAGS=""
         fi
 

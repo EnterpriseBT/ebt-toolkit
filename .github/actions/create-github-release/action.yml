@@ -5,9 +5,6 @@ inputs:
   tag:
     description: "Tag label for the release (e.g., v2.3.1)"
     required: true
-  github_token:
-    description: "GitHub token for creating releases"
-    required: true
 
 outputs:
   release_url:

@@ -61,4 +61,3 @@ jobs:
         uses: ./.github/actions/create-github-release
         with:
           tag: ${{ steps.version.outputs.tag }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}
