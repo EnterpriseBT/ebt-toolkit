@@ -67,7 +67,6 @@ jobs:
         if: success()
         run: |
           echo "## Summary" >> $GITHUB_STEP_SUMMARY
-          echo "- **Branch:** \`${{ steps.validate.outputs.branch_name }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- **Branch Type:** \`${{ steps.validate.outputs.branch_type }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- **Tag:** \`${{ steps.git_tag.outputs.tag }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- **Release URL:** \`${{ steps.github_release.outputs.url }}\`" >> $GITHUB_STEP_SUMMARY
