@@ -2,6 +2,11 @@ name: Build and Deploy Docker Image
 
 on:
   workflow_call:
+    inputs:
+      tag:
+        description: 'Git tag to push'
+        required: true
+        type: string
 
 env:
   DOCKER_REGISTRY: ${{ vars.DOCKER_REGISTRY }}
@@ -23,6 +28,8 @@ jobs:
         with:
           images: |
             ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}
+          tags: |
+            ${{ inputs.tag }}
 
       - name: Login to DockerHub
         if: success()

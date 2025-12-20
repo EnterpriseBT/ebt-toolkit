@@ -34,6 +34,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
+          fetch-tags: true 
           fetch-depth: 0 # Fetch all history for proper version calculation
 
       - name: Validate branch name
@@ -75,3 +76,5 @@ jobs:
     needs: publish-release
     if: ${{ needs.publish-release.result == 'success' }}
     uses: ./.github/workflows/docker_push.yml
+    with:
+      tag: ${{ steps.git_tag.outputs.tag }}
