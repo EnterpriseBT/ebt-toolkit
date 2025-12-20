@@ -31,12 +31,12 @@ jobs:
       (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
     runs-on: ubuntu-latest
     outputs:
-      tag: ${{ steps.git_tag.outputs.tag }} 
+      tag: ${{ steps.git_tag.outputs.tag }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-tags: true 
+          fetch-tags: true
           fetch-depth: 0 # Fetch all history for proper version calculation
 
       - name: Validate branch name
@@ -57,14 +57,14 @@ jobs:
         with:
           tag: ${{ steps.version.outputs.tag }}
           message: ${{ steps.version.outputs.message }}
-        
+
       - name: Create GitHub release
         id: github_release
         if: success() && steps.validate.outputs.branch_type == 'release'
         uses: ./.github/actions/create-github-release
         with:
           tag: ${{ steps.version.outputs.tag }}
-      
+
       - name: Output summary
         id: output_summary
         if: success()

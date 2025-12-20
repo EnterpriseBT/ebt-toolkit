@@ -13,7 +13,6 @@ env:
   DOCKER_IMAGE_NAME: ${{ vars.DOCKER_IMAGE_NAME }}
 jobs:
   dockerhub-push:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
