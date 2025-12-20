@@ -1,4 +1,4 @@
-name: Create Tag and Release
+name: Publish Tag and Release
 
 on:
   push:
@@ -24,8 +24,8 @@ on:
       - "refactor/**"
   workflow_dispatch:
 jobs:
-  publish-release:
-    name: Publish Release
+  create-tag-publish-release:
+    name: Create Tag and PublishRelease
     if: |
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'push' ||
@@ -74,12 +74,12 @@ jobs:
           echo "- **Branch Type:** \`${{ steps.validate.outputs.branch_type }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- **Tag:** \`${{ steps.git_tag.outputs.tag }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- **Release URL:** \`${{ steps.github_release.outputs.url }}\`" >> $GITHUB_STEP_SUMMARY
-  docker_push:
+  trigger-docker-push:
     name: Docker Push
-    needs: publish-release
+    needs: create-tag-publish-release
     uses: ./.github/workflows/docker_push.yml
     with:
-      tag: ${{ needs.publish-release.outputs.tag }}
+      tag: ${{ needs.create-tag-publish-release.outputs.tag }}
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}

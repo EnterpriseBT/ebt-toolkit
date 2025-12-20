@@ -25,6 +25,7 @@ show_help() {
     echo "Available commands:"
     echo "  branch                Create a new git branch interactively"
     echo "  commit                Create a git commit interactively"
+    echo "  workflow              Copy workflow templates to .github folder"
     echo "  help | --help | -h    Show help message"
     echo ""
 }
@@ -36,6 +37,9 @@ case "$1" in
         ;;
     commit)
         bash "$SCRIPT_DIR/commit.sh"
+        ;;
+    workflow)
+        bash "$SCRIPT_DIR/workflow.sh"
         ;;
     help|--help|-h)
         show_help

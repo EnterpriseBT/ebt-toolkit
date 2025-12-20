@@ -1,0 +1,85 @@
+name: Publish Tag and Release
+
+on:
+  push:
+    branches:
+      - main
+      - staging
+      - "feature/**"
+      - "patch/**"
+      - "ci/**"
+      - "doc/**"
+      - "performance/**"
+      - "refactor/**"
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+      - staging
+      - "feature/**"
+      - "patch/**"
+      - "ci/**"
+      - "doc/**"
+      - "performance/**"
+      - "refactor/**"
+  workflow_dispatch:
+jobs:
+  create-tag-publish-release:
+    name: Create Tag and PublishRelease
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'push' ||
+      (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.git_tag.outputs.tag }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-tags: true
+          fetch-depth: 0 # Fetch all history for proper version calculation
+
+      - name: Validate branch name
+        id: validate
+        uses: ./.github/actions/validate-branch
+
+      - name: Calculate version
+        id: version
+        uses: ./.github/actions/calculate-version
+        with:
+          branch_type: ${{ steps.validate.outputs.branch_type }}
+          ticket: ${{ steps.validate.outputs.ticket }}
+
+      - name: Create Git tag
+        id: git_tag
+        if: success()
+        uses: ./.github/actions/create-git-tag
+        with:
+          tag: ${{ steps.version.outputs.tag }}
+          message: ${{ steps.version.outputs.message }}
+
+      - name: Create GitHub release
+        id: github_release
+        if: success() && steps.validate.outputs.branch_type == 'release'
+        uses: ./.github/actions/create-github-release
+        with:
+          tag: ${{ steps.version.outputs.tag }}
+
+      - name: Output summary
+        id: output_summary
+        if: success()
+        run: |
+          echo "## Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch Type:** \`${{ steps.validate.outputs.branch_type }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tag:** \`${{ steps.git_tag.outputs.tag }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Release URL:** \`${{ steps.github_release.outputs.url }}\`" >> $GITHUB_STEP_SUMMARY
+  trigger-docker-push:
+    name: Docker Push
+    needs: create-tag-publish-release
+    uses: ./.github/workflows/docker_push.yml
+    with:
+      tag: ${{ needs.create-tag-publish-release.outputs.tag }}
+    secrets:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}

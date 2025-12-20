@@ -1,0 +1,54 @@
+name: Build and Deploy Docker Image
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: "Git tag to push"
+        required: true
+        type: string
+    secrets:
+      DOCKERHUB_USERNAME:
+        required: true
+      DOCKERHUB_TOKEN:
+        required: true
+
+env:
+  DOCKER_REGISTRY: ${{ vars.DOCKER_REGISTRY }}
+  DOCKER_IMAGE_NAME: ${{ vars.DOCKER_IMAGE_NAME }}
+jobs:
+  dockerhub-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history for proper version calculation
+
+      - name: Docker metadata
+        id: meta
+        if: success()
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}
+          tags: |
+            ${{ inputs.tag }}
+
+      - name: Login to DockerHub
+        if: success()
+        id: login
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push
+        id: build_push
+        if: success()
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
