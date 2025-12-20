@@ -80,4 +80,3 @@ jobs:
     uses: ./.github/workflows/docker_push.yml
     with:
       tag: ${{ needs.publish-release.outputs.tag }}
-      secrets: inherit
