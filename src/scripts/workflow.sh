@@ -24,7 +24,7 @@ if [ ! -d "$dest_folder/workflows" ]; then
 fi
 
 # Copy *.action.template.yml files to actions, removing .template. in destination filenames
-template_src="$pwd/assets/templates/github"
+template_src="/usr/local/bin/ebt-toolkit/assets/templates/github"
 if compgen -G "$template_src/*.action.template.yml" > /dev/null; then
   echo "Copying *.action.template.yml files to $dest_folder/actions (removing .template.)"
   for srcfile in "$template_src"/*.action.template.yml; do
