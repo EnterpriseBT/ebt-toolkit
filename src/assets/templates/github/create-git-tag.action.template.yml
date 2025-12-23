@@ -1,0 +1,42 @@
+name: 'Create Git Tag'
+description: 'Creates and pushes a git tag'
+
+inputs:
+  tag:
+    description: 'Git tag label to create (e.g., v2.3.1)'
+    required: true
+  message:
+    description: 'Tag message'
+    required: false
+    default: ''
+
+outputs:
+  tag:
+    description: 'Git tag label created'
+    value: ${{ steps.create_git_tag.outputs.tag }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Create and push git tag
+      id: create_git_tag
+      shell: bash
+      run: |
+        GIT_TAG="${{ inputs.tag }}"
+        MESSAGE="${{ inputs.message }}"
+
+        if [ -z "$MESSAGE" ]; then
+          MESSAGE="Release $GIT_TAG"
+        fi
+
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+
+        # Create and push tag
+        git tag -a "$GIT_TAG" -m "$MESSAGE"
+        git push origin "$GIT_TAG"
+
+        echo "Created and pushed git tag: $GIT_TAG"
+
+        echo "tag=$GIT_TAG" >> $GITHUB_OUTPUT
+

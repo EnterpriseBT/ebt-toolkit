@@ -1,0 +1,119 @@
+name: 'Calculate Version'
+description: 'Calculates new version based on git tags and conventional commits'
+
+inputs:
+  branch_type:
+    description: 'Type of branch (release, candidate or development)'
+    required: true
+  ticket:
+    description: 'Ticket identifier from branch name'
+    required: false
+    default: ''
+
+outputs:
+  version:
+    description: 'New semantic version (e.g., 2.3.1)'
+    value: ${{ steps.version.outputs.version }}
+  additional_tags:
+    description: 'Additional tags to apply (e.g., latest, staging)'
+    value: ${{ steps.version.outputs.additional_tags }}
+  tag:
+    description: 'Tag label to create (e.g., v2.3.1)'
+    value: ${{ steps.version.outputs.tag }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Get latest version tag
+      id: get_version
+      shell: bash
+      run: |
+        # Get the latest semantic version tag based on branch type and environment
+        if [[ "${{ inputs.branch_type }}" == "release" ]]; then
+          LATEST_TAG=$(git tag -l 'release-v*.*.*' --sort=-v:refname | head -n 1)
+        elif [[ "${{ inputs.branch_type }}" == "candidate" ]]; then
+          LATEST_TAG=$(git tag -l 'rc-v*.*.*' --sort=-v:refname | head -n 1)
+        elif [[ "${{ inputs.branch_type }}" == "development" ]]; then
+          LATEST_TAG=$(git tag -l "${{ inputs.ticket }}-v*.*.*" --sort=-v:refname | head -n 1)
+        else
+          echo "Invalid branch type: ${{ inputs.branch_type }}"
+          exit 0
+        fi
+
+        if [ -z "$LATEST_TAG" ]; then
+          echo "No existing version tags found, starting from v0.0.0"
+          LATEST_TAG="v0.0.0"
+        fi
+        echo "Latest tag: $LATEST_TAG"
+
+        # Extract the part matching v*.*.* (e.g. v1.2.3) from anywhere in the tag
+        VERSION_PART=$(echo "$LATEST_TAG" | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+')
+        if [ -z "$VERSION_PART" ]; then
+          echo "Could not extract semantic version from tag: $LATEST_TAG"
+          exit 1
+        fi
+
+        # Remove the 'v' and split into major, minor, patch
+        VERSION="${VERSION_PART#v}"
+        IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+
+        echo "current_major=$MAJOR" >> $GITHUB_OUTPUT
+        echo "current_minor=$MINOR" >> $GITHUB_OUTPUT
+        echo "current_patch=$PATCH" >> $GITHUB_OUTPUT
+
+    - name: Determine new version
+      id: version
+      shell: bash
+      run: |
+        BRANCH_NAME="${GITHUB_REF#refs/heads/}"
+        BRANCH_TYPE="${{ inputs.branch_type }}"
+        TICKET="${{ inputs.ticket }}"
+
+        MAJOR=${{ steps.get_version.outputs.current_major }}
+        MINOR=${{ steps.get_version.outputs.current_minor }}
+        PATCH=${{ steps.get_version.outputs.current_patch }}
+
+        # Get the most recent commit message
+        COMMIT_MSG=$(git log -1 --pretty=%B)
+        echo "Commit message: $COMMIT_MSG"
+
+        # Parse conventional commit format: type(scope): description
+        # Check for breaking change indicator (!)
+        if [[ "$COMMIT_MSG" == *"!:"* ]]; then
+          echo "Breaking change detected (!) - incrementing MAJOR version"
+          MAJOR=$((MAJOR + 1))
+          MINOR=0
+          PATCH=0
+        elif [[ "$COMMIT_MSG" == "feat:"* ]] || [[ "$COMMIT_MSG" == "feat("*"):"* ]]; then
+          echo "Feature detected - incrementing MINOR version"
+          MINOR=$((MINOR + 1))
+          PATCH=0
+        else
+          echo "Patch/other change - incrementing PATCH version"
+          PATCH=$((PATCH + 1))
+        fi
+
+        NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+
+        # Determine tags based on branch
+        if [[ "${{ inputs.branch_type }}" == "release" ]]; then
+          # Main branch: stable release (e.g., release-v2.3.1)
+          TAG="release-v${NEW_VERSION}"
+          ADDITIONAL_TAGS="latest"
+        elif [[ "${{ inputs.branch_type }}" == "candidate" ]]; then
+          # Staging branch: release candidate (e.g., rc-v2.3.1)
+          TAG="rc-v${NEW_VERSION}"
+          ADDITIONAL_TAGS="candidate"
+        else
+          # Development branches: prefix ticket to tag (e.g., PROJ-123-v2.3.1)
+          TAG="${TICKET}-v${NEW_VERSION}"
+          ADDITIONAL_TAGS=""
+        fi
+
+        echo "New version: $NEW_VERSION"
+        echo "Tag: $TAG"
+        echo "Additional tags: $ADDITIONAL_TAGS"
+
+        echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+        echo "tag=$TAG" >> $GITHUB_OUTPUT
+        echo "additional_tags=$ADDITIONAL_TAGS" >> $GITHUB_OUTPUT

@@ -1,0 +1,57 @@
+name: 'Docker Build and Push'
+description: 'Builds and pushes Docker image with specified tags'
+
+inputs:
+  registry:
+    description: 'Docker registry/organization'
+    required: true
+  image_name:
+    description: 'Docker image name'
+    required: true
+  docker_tag:
+    description: 'Primary Docker tag'
+    required: true
+  additional_tags:
+    description: 'Additional tags (comma-separated)'
+    required: false
+    default: ''
+  docker_username:
+    description: 'Docker Hub username'
+    required: true
+  docker_password:
+    description: 'Docker Hub password/token'
+    required: true
+  context:
+    description: 'Build context path'
+    required: false
+    default: '.'
+
+outputs:
+  image_digest:
+    description: 'Docker image digest'
+    value: ${{ steps.docker_build.outputs.digest }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ inputs.docker_username }}
+        password: ${{ inputs.docker_password }}
+
+    - name: Build and push Docker image
+      id: docker_build
+      uses: docker/build-push-action@v5
+      with:
+        context: ${{ inputs.context }}
+        push: true
+        platforms: linux/amd64,linux/arm64/v8
+        tags: |
+          ${{ inputs.registry }}/${{ inputs.image_name }}:${{ inputs.docker_tag }}
+          ${{ inputs.additional_tags && format('{0}/{1}:{2}', inputs.registry, inputs.image_name, inputs.additional_tags) || '' }}
+        cache-from: type=registry,ref=${{ inputs.registry }}/${{ inputs.image_name }}:buildcache
+        cache-to: type=registry,ref=${{ inputs.registry }}/${{ inputs.image_name }}:buildcache,mode=max
