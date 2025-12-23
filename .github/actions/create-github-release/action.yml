@@ -1,0 +1,29 @@
+name: "Create GitHub Release"
+description: "Creates a GitHub release from a git tag"
+
+inputs:
+  tag:
+    description: "Tag label for the release (e.g., v2.3.1)"
+    required: true
+
+outputs:
+  release_url:
+    description: "URL of the created release"
+    value: ${{ steps.create_release.outputs.url }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Create GitHub Release
+      id: create_release
+      shell: bash
+      run: |
+        TAG="${{ inputs.tag }}"
+
+        # Create release using GitHub CLI
+        RELEASE_URL=$(gh release create "$TAG" \
+          --title "Release $TAG" \
+          --notes "$RELEASE_NOTES")
+
+        echo "url=$RELEASE_URL" >> $GITHUB_OUTPUT
+        echo "Created GitHub release: $RELEASE_URL"
