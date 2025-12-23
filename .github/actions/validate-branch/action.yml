@@ -31,7 +31,7 @@ runs:
           echo "Valid branch: $BRANCH_NAME"
           echo "branch_type=release" >> $GITHUB_OUTPUT
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
-        elif [[ "$BRANCH_NAME" == "candidate" ]]; then
+        elif [[ "$BRANCH_NAME" == "staging" ]]; then
           echo "Valid branch: $BRANCH_NAME"
           echo "branch_type=candidate" >> $GITHUB_OUTPUT
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT

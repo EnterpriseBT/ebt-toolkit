@@ -10,7 +10,8 @@ RUN apt-get update && \
     unzip \
     gpg \
     apt-transport-https \
-    ca-certificates && \
+    ca-certificates \
+    groff && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
