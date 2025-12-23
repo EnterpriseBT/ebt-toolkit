@@ -17,6 +17,8 @@ runs:
     - name: Create GitHub Release
       id: create_release
       shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
       run: |
         TAG="${{ inputs.tag }}"
 
