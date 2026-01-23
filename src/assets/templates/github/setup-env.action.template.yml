@@ -1,0 +1,41 @@
+name: "Setup Application Environment"
+description: "Setup environment variables for the project"
+
+inputs:
+  tag:
+    description: "Tag for the build"
+    required: true
+  deployment_type:
+    description: "Type of branch (release, candidate or feature)"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup environment for all branches
+      shell: bash
+      # Create .env file and set values based on inputs
+      run: |
+        echo "Setting up environment for all branches"
+        echo "BUILD_TAG=${{ inputs.tag }}" >> .env
+
+    # Include production environment variables here
+    - name: Setup environment for release branch
+      if: ${{ inputs.deployment_type == 'release' }}
+      shell: bash
+      run: |
+        echo "Setting up environment for release branch"
+
+    # Include staging environment variables here
+    - name: Setup environment for candidate branch
+      if: ${{ inputs.deployment_type == 'candidate' }}
+      shell: bash
+      run: |
+        echo "Setting up environment for candidate branch"
+
+    # Include feature environment variables here
+    - name: Setup environment for feature branch
+      if: ${{ inputs.deployment_type == 'feature' }}
+      shell: bash
+      run: |
+        echo "Setting up environment for feature branch"

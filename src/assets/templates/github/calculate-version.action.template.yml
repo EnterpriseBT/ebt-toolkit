@@ -1,42 +1,42 @@
-name: 'Calculate Version'
-description: 'Calculates new version based on git tags and conventional commits'
+name: "Calculate Version"
+description: "Calculates new version based on git tags and conventional commits"
 
 inputs:
-  branch_type:
-    description: 'Type of branch (release, candidate or development)'
+  deployment_type:
+    description: "Type of branch (release, candidate or feature)"
     required: true
   ticket:
-    description: 'Ticket identifier from branch name'
+    description: "Ticket identifier from branch name"
     required: false
-    default: ''
+    default: ""
 
 outputs:
   version:
-    description: 'New semantic version (e.g., 2.3.1)'
+    description: "New semantic version (e.g., 2.3.1)"
     value: ${{ steps.version.outputs.version }}
   additional_tags:
-    description: 'Additional tags to apply (e.g., latest, staging)'
+    description: "Additional tags to apply (e.g., latest, staging)"
     value: ${{ steps.version.outputs.additional_tags }}
   tag:
-    description: 'Tag label to create (e.g., v2.3.1)'
+    description: "Tag label to create (e.g., v2.3.1)"
     value: ${{ steps.version.outputs.tag }}
 
 runs:
-  using: 'composite'
+  using: "composite"
   steps:
     - name: Get latest version tag
       id: get_version
       shell: bash
       run: |
         # Get the latest semantic version tag based on branch type and environment
-        if [[ "${{ inputs.branch_type }}" == "release" ]]; then
+        if [[ "${{ inputs.deployment_type }}" == "release" ]]; then
           LATEST_TAG=$(git tag -l 'release-v*.*.*' --sort=-v:refname | head -n 1)
-        elif [[ "${{ inputs.branch_type }}" == "candidate" ]]; then
+        elif [[ "${{ inputs.deployment_type }}" == "candidate" ]]; then
           LATEST_TAG=$(git tag -l 'rc-v*.*.*' --sort=-v:refname | head -n 1)
-        elif [[ "${{ inputs.branch_type }}" == "development" ]]; then
+        elif [[ "${{ inputs.deployment_type }}" == "feature" ]]; then
           LATEST_TAG=$(git tag -l "${{ inputs.ticket }}-v*.*.*" --sort=-v:refname | head -n 1)
         else
-          echo "Invalid branch type: ${{ inputs.branch_type }}"
+          echo "Invalid branch type: ${{ inputs.deployment_type }}"
           exit 0
         fi
 
@@ -66,7 +66,6 @@ runs:
       shell: bash
       run: |
         BRANCH_NAME="${GITHUB_REF#refs/heads/}"
-        BRANCH_TYPE="${{ inputs.branch_type }}"
         TICKET="${{ inputs.ticket }}"
 
         MAJOR=${{ steps.get_version.outputs.current_major }}
@@ -96,18 +95,18 @@ runs:
         NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
 
         # Determine tags based on branch
-        if [[ "${{ inputs.branch_type }}" == "release" ]]; then
+        if [[ "${{ inputs.deployment_type }}" == "release" ]]; then
           # Main branch: stable release (e.g., release-v2.3.1)
           TAG="release-v${NEW_VERSION}"
           ADDITIONAL_TAGS="latest"
-        elif [[ "${{ inputs.branch_type }}" == "candidate" ]]; then
+        elif [[ "${{ inputs.deployment_type }}" == "candidate" ]]; then
           # Staging branch: release candidate (e.g., rc-v2.3.1)
           TAG="rc-v${NEW_VERSION}"
           ADDITIONAL_TAGS="candidate"
         else
           # Development branches: prefix ticket to tag (e.g., PROJ-123-v2.3.1)
           TAG="${TICKET}-v${NEW_VERSION}"
-          ADDITIONAL_TAGS=""
+          ADDITIONAL_TAGS="${TICKET}"
         fi
 
         echo "New version: $NEW_VERSION"

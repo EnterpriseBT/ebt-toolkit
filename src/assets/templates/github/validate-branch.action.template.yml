@@ -1,22 +1,27 @@
-name: 'Validate Branch Name'
-description: 'Validates branch name follows naming conventions and extracts metadata'
+name: "Validate Branch Name"
+description: "Validates branch name follows naming conventions and extracts metadata"
 
 outputs:
   ticket:
-    description: 'Extracted ticket from branch name'
+    description: "Extracted ticket from branch name"
     value: ${{ steps.validate.outputs.ticket }}
-  branch_type:
-    description: 'Type of branch (release or development)'
-    value: ${{ steps.validate.outputs.branch_type }}
+  deployment_type:
+    description: "Type of branch (release, candidate, feature)"
+    value: ${{ steps.validate.outputs.deployment_type }}
 
 runs:
-  using: 'composite'
+  using: "composite"
   steps:
     - name: Validate branch name
       id: validate
       shell: bash
       run: |
-        BRANCH_NAME="${GITHUB_REF#refs/heads/}"
+        # Use github.ref_name if available, fallback to stripping refs/heads/ from GITHUB_REF for older workflow compatibility
+        if [ -n "${GITHUB_REF_NAME:-}" ]; then
+          BRANCH_NAME="${GITHUB_REF_NAME}"
+        else
+          BRANCH_NAME="${GITHUB_REF#refs/heads/}"
+        fi
         # Extract the ticket (middle part of [prefix]/[ticket]/[description])
         TICKET="$(echo "$BRANCH_NAME" | cut -d'/' -f2)"
         echo "Extracted ticket: $TICKET"
@@ -29,15 +34,15 @@ runs:
 
         if [[ "$BRANCH_NAME" == "main" ]]; then
           echo "Valid branch: $BRANCH_NAME"
-          echo "branch_type=release" >> $GITHUB_OUTPUT
+          echo "deployment_type=release" >> $GITHUB_OUTPUT
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
-        elif [[ "$BRANCH_NAME" == "candidate" ]]; then
+        elif [[ "$BRANCH_NAME" == "staging" ]]; then
           echo "Valid branch: $BRANCH_NAME"
-          echo "branch_type=candidate" >> $GITHUB_OUTPUT
+          echo "deployment_type=candidate" >> $GITHUB_OUTPUT
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
         elif [[ "$BRANCH_NAME" =~ ^(feature|patch|ci|doc|performance|refactor)/[^/]+/[^/]+$ ]]; then
           echo "Valid branch: $BRANCH_NAME"
-          echo "branch_type=development" >> $GITHUB_OUTPUT
+          echo "deployment_type=feature" >> $GITHUB_OUTPUT
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
         else
           echo "ERROR: Branch name '$BRANCH_NAME' does not follow naming conventions"
